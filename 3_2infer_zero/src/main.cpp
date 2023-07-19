@@ -106,22 +106,7 @@ int main(){
 		channel = input_attrs[0].dims[3];
 	}
 
-	// 初始化输入
-	rknn_input inputs[1];
-	memset(inputs, 0, sizeof(inputs));
-	inputs[0].index        = 0;
-	inputs[0].type         = RKNN_TENSOR_UINT8;
-	inputs[0].size         = width * height * channel;
-	inputs[0].fmt          = RKNN_TENSOR_NHWC;				
-	inputs[0].pass_through = 0;
-
-	// 申请输出空间
-	rknn_output outputs[io_num.n_output];
-	memset(outputs, 0, sizeof(outputs));
-	for (int i = 0; i < io_num.n_output; i++) {
-		outputs[i].want_float = false;			// 输出是u8类型。 true则在内部转成fp后再输出	
-	}
-
+	
 	// 初始化后处理类
 	for (int i = 0; i < io_num.n_output; ++i) {
 		out_scales.push_back(output_attrs[i].scale);
@@ -136,19 +121,28 @@ int main(){
 	// 预处理
 	float scale = std::min(width / (img.cols*1.0), height / (img.rows*1.0));
 	auto img_out = static_resize(img, width, height);
-	inputs[0].buf = (void*)img_out.data;
 
-	// 设置输入
-	CHECK_RKNN(rknn_inputs_set(ctx, io_num.n_input, inputs));
+	// 输出内存
+	rknn_tensor_mem* input_mems[1];
+	rknn_tensor_mem* output_mems[1];
+	input_mems[0]   = rknn_create_mem(ctx, input_attrs[0].size_with_stride);
+    output_mems[0]  = rknn_create_mem(ctx, output_attrs[0].n_elems * sizeof(int8_t));
+
+	memcpy(input_mems[0]->virt_addr, img_out.data, input_attrs[0].size_with_stride);
+
+	input_attrs[0].type = RKNN_TENSOR_UINT8;
+	output_attrs[0].type = RKNN_TENSOR_INT8;
+
+
+	CHECK_RKNN(rknn_set_io_mem(ctx, input_mems[0], &input_attrs[0]));
+	CHECK_RKNN(rknn_set_io_mem(ctx, output_mems[0], &output_attrs[0]));
 
 	// 推理
 	CHECK_RKNN(rknn_run(ctx, NULL));
 
-	// 获取输出
-	CHECK_RKNN(rknn_outputs_get(ctx, io_num.n_output, outputs, NULL));
 
 	// 后处理
-	auto res = post_process->process((int8_t *)outputs->buf, out_zps, out_scales);
+	auto res = post_process->process((int8_t *)output_mems[0]->virt_addr, out_zps, out_scales);
 	
 	// 打印结果
 	printf("res size: %ld\n", res.size());
@@ -164,37 +158,36 @@ int main(){
 		cv::putText(img, std::to_string(a.category), cv::Point(a.x1, a.y1 + 12), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 0));
 	}
 	cv::imwrite("./out.jpg", img);
-	CHECK_RKNN(rknn_outputs_release(ctx, io_num.n_output, outputs));
 
 	// 测速
 	int test_count = 1000;
 	// warmup
 	for (int i = 0; i < 50; ++i) {
 		auto img_out = static_resize(img, width, height);
-		inputs[0].buf = (void*)img_out.data;
-		CHECK_RKNN(rknn_inputs_set(ctx, io_num.n_input, inputs));
+		memcpy(input_mems[0]->virt_addr, img_out.data, input_attrs[0].size_with_stride);
 		CHECK_RKNN(rknn_run(ctx, NULL));
-		CHECK_RKNN(rknn_outputs_get(ctx, io_num.n_output, outputs, NULL));
-		auto res = post_process->process((int8_t *)outputs->buf, out_zps, out_scales);
-		CHECK_RKNN(rknn_outputs_release(ctx, io_num.n_output, outputs));
+		auto res = post_process->process((int8_t *)output_mems[0]->virt_addr, out_zps, out_scales);
+
 	}
 	
 	auto start = std::chrono::system_clock::now();
 	for (int i = 0; i < test_count; ++i) {
 		auto img_out = static_resize(img, width, height);
-		inputs[0].buf = (void*)img_out.data;
-		CHECK_RKNN(rknn_inputs_set(ctx, io_num.n_input, inputs));
+		memcpy(input_mems[0]->virt_addr, img_out.data, input_attrs[0].size_with_stride);
 		CHECK_RKNN(rknn_run(ctx, NULL));
-		CHECK_RKNN(rknn_outputs_get(ctx, io_num.n_output, outputs, NULL));
-		auto res = post_process->process((int8_t *)outputs->buf, out_zps, out_scales);
-		CHECK_RKNN(rknn_outputs_release(ctx, io_num.n_output, outputs));
+		auto res = post_process->process((int8_t *)output_mems[0]->virt_addr, out_zps, out_scales);
+
 	}
 
 	auto end = std::chrono::system_clock::now();
 	float infer_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() ;
 	printf("运行 %d 次，平均耗时 %f ms\n", test_count, infer_time / (float)test_count);
 
+
 	// release
+	
+	CHECK_RKNN(rknn_destroy_mem(ctx, input_mems[0]));
+	CHECK_RKNN(rknn_destroy_mem(ctx, output_mems[0]));
 	CHECK_RKNN(rknn_destroy(ctx));
 
 	if (model_data) {
