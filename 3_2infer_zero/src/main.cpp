@@ -61,6 +61,10 @@ int main(){
 
 	// 初始化
 	CHECK_RKNN(rknn_init(&ctx, model_data, model_data_size, 0, NULL));
+
+	// 指定npu核
+	// rknn_core_mask core_mask = RKNN_NPU_CORE_0_1_2;
+	// CHECK_RKNN(rknn_set_core_mask(ctx, core_mask));
 	
 	// 获取&打印版本信息
 	rknn_sdk_version version;
@@ -140,14 +144,12 @@ int main(){
 	// 推理
 	CHECK_RKNN(rknn_run(ctx, NULL));
 
-
 	// 后处理
 	auto res = post_process->process((int8_t *)output_mems[0]->virt_addr, out_zps, out_scales);
 	
 	// 打印结果
 	printf("res size: %ld\n", res.size());
 	for (auto a : res) {
-		std::cout << scale << std::endl;
 		a.x1 /= scale;
 		a.y1 /= scale;
 		a.x2 /= scale;
@@ -160,7 +162,7 @@ int main(){
 	cv::imwrite("./out.jpg", img);
 
 	// 测速
-	int test_count = 1000;
+	int test_count = 200;
 	// warmup
 	for (int i = 0; i < 50; ++i) {
 		auto img_out = static_resize(img, width, height);
