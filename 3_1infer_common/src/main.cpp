@@ -170,7 +170,7 @@ int main(){
 	CHECK_RKNN(rknn_outputs_release(ctx, io_num.n_output, outputs));
 
 	// 测速
-	int test_count = 200;
+	int test_count = 1000;
 	// warmup
 	for (int i = 0; i < 50; ++i) {
 		auto img_out = static_resize(img, width, height);

@@ -26,7 +26,7 @@ static void dump_tensor_attr(rknn_tensor_attr* attr){
 			get_qnt_type_string(attr->qnt_type), attr->zp, attr->scale);
 }
 
-
+// resize
 cv::Mat static_resize(cv::Mat& img, int input_w, int input_h) {
     float r = std::min(input_w / (img.cols*1.0), input_h / (img.rows*1.0));
     // r = std::min(r, 1.0f);
@@ -110,7 +110,6 @@ int main(){
 		channel = input_attrs[0].dims[3];
 	}
 
-	
 	// 初始化后处理类
 	for (int i = 0; i < io_num.n_output; ++i) {
 		out_scales.push_back(output_attrs[i].scale);
@@ -126,20 +125,21 @@ int main(){
 	float scale = std::min(width / (img.cols*1.0), height / (img.rows*1.0));
 	auto img_out = static_resize(img, width, height);
 
-	// 输出内存
+	// 输入输出内存
 	rknn_tensor_mem* input_mems[1];
 	rknn_tensor_mem* output_mems[1];
 	input_mems[0]   = rknn_create_mem(ctx, input_attrs[0].size_with_stride);
     output_mems[0]  = rknn_create_mem(ctx, output_attrs[0].n_elems * sizeof(int8_t));
 
-	memcpy(input_mems[0]->virt_addr, img_out.data, input_attrs[0].size_with_stride);
-
+	// 输入输出类型
 	input_attrs[0].type = RKNN_TENSOR_UINT8;
 	output_attrs[0].type = RKNN_TENSOR_INT8;
 
-
+	// 绑定
 	CHECK_RKNN(rknn_set_io_mem(ctx, input_mems[0], &input_attrs[0]));
 	CHECK_RKNN(rknn_set_io_mem(ctx, output_mems[0], &output_attrs[0]));
+
+	memcpy(input_mems[0]->virt_addr, img_out.data, input_attrs[0].size_with_stride);
 
 	// 推理
 	CHECK_RKNN(rknn_run(ctx, NULL));
@@ -162,7 +162,7 @@ int main(){
 	cv::imwrite("./out.jpg", img);
 
 	// 测速
-	int test_count = 200;
+	int test_count = 1000;
 	// warmup
 	for (int i = 0; i < 50; ++i) {
 		auto img_out = static_resize(img, width, height);
@@ -187,7 +187,6 @@ int main(){
 
 
 	// release
-	
 	CHECK_RKNN(rknn_destroy_mem(ctx, input_mems[0]));
 	CHECK_RKNN(rknn_destroy_mem(ctx, output_mems[0]));
 	CHECK_RKNN(rknn_destroy(ctx));
