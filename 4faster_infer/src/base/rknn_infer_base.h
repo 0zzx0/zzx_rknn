@@ -16,7 +16,7 @@
     
     把rknn 推理基类 零拷贝API
 */
-
+template<class OUTPUT>
 class RknnInferBase {
 
 public:
@@ -39,7 +39,7 @@ public:
     // 申请输入输出内存 建议重写
     virtual void init_io_tensor_mem();      // 一般也要重写，指定输入输出类型和大小
     // 推理 必须重写
-    virtual void infer(cv::Mat &img) = 0; // 纯虚函数
+    virtual void infer(cv::Mat &img, OUTPUT &results) = 0; // 纯虚函数
 
 
 protected:

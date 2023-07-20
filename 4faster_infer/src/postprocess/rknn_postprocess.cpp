@@ -89,10 +89,10 @@ YoloxPostProcess::YoloxPostProcess(int input_size, float prob_threshold, float n
 
 }
 
-std::vector<ObjBox> YoloxPostProcess::process(int8_t *src, std::vector<int32_t> &zps, std::vector<float> &scales) {
+void YoloxPostProcess::process(int8_t *src, std::vector<ObjBox> &res_boxes, float img_scale,  std::vector<int32_t> &zps, std::vector<float> &scales) {
 
     out_boxes.clear();
-    nms_boxes.clear();
+    // nms_boxes.clear();
 
     const int8_t *feat_ptr = src;
     
@@ -123,10 +123,10 @@ std::vector<ObjBox> YoloxPostProcess::process(int8_t *src, std::vector<int32_t> 
             if (box_prob > prob_threshold_){
 
                 ObjBox obj;
-                obj.x1 = x0;
-                obj.y1 = y0;
-                obj.x2 = x1;
-                obj.y2 = y1;
+                obj.x1 = x0 / img_scale;
+                obj.y1 = y0 / img_scale;
+                obj.x2 = x1 / img_scale;
+                obj.y2 = y1 / img_scale;
 
                 obj.category = class_idx;
                 obj.score = box_prob;
@@ -140,8 +140,8 @@ std::vector<ObjBox> YoloxPostProcess::process(int8_t *src, std::vector<int32_t> 
 
     } // point anchor loop
 
-    nms(out_boxes, nms_boxes, nms_threshold_);
-    return nms_boxes;
+    nms(out_boxes, res_boxes, nms_threshold_);
+    return ;
 }
 
 

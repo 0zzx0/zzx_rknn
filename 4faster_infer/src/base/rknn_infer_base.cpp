@@ -1,8 +1,8 @@
 #include "rknn_infer_base.h"
 
 
-
-RknnInferBase::~RknnInferBase() {
+template<class OUTPUT>
+RknnInferBase<OUTPUT>::~RknnInferBase() {
 
     if (model_data_ != nullptr) {
 		free(model_data_);
@@ -23,7 +23,8 @@ RknnInferBase::~RknnInferBase() {
     printf("release over! ");
 }
 
-void RknnInferBase::Init(const std::string &model_path, const float nms_threshold, const float conf_threshold) {
+template<class OUTPUT>
+void RknnInferBase<OUTPUT>::Init(const std::string &model_path, const float nms_threshold, const float conf_threshold) {
     
     this->model_path_ = model_path;
     this->nms_threshold_ = nms_threshold;
@@ -61,21 +62,21 @@ void RknnInferBase::Init(const std::string &model_path, const float nms_threshol
 
 }
 
-
-void RknnInferBase::print_version_info(){
+template<class OUTPUT>
+void RknnInferBase<OUTPUT>::print_version_info(){
     rknn_sdk_version version;
 	CHECK_RKNN(rknn_query(ctx_, RKNN_QUERY_SDK_VERSION, &version, sizeof(rknn_sdk_version)));
 	printf("sdk version: %s driver version: %s\n", version.api_version, version.drv_version);
 }
 
-
-void RknnInferBase::get_io_num() {
+template<class OUTPUT>
+void RknnInferBase<OUTPUT>::get_io_num() {
     CHECK_RKNN(rknn_query(ctx_, RKNN_QUERY_IN_OUT_NUM, &io_num_, sizeof(io_num_)));
 	printf("IO Info: input num: %d, output num: %d\n", io_num_.n_input, io_num_.n_output);
 }
 
-
-void RknnInferBase::get_io_attrs() {
+template<class OUTPUT>
+void RknnInferBase<OUTPUT>::get_io_attrs() {
     input_attrs_.resize(io_num_.n_input);
     output_attrs_.resize(io_num_.n_output);
 
@@ -94,8 +95,8 @@ void RknnInferBase::get_io_attrs() {
 	}
 }
 
-
-void RknnInferBase::get_input_hwc(){
+template<class OUTPUT>
+void RknnInferBase<OUTPUT>::get_input_hwc(){
     if (input_attrs_[0].fmt == RKNN_TENSOR_NCHW) {
 		input_channel_ = input_attrs_[0].dims[1];
 		input_h_  = input_attrs_[0].dims[2];
@@ -107,13 +108,13 @@ void RknnInferBase::get_input_hwc(){
 	}
 }
 
-
-void RknnInferBase::set_npu_core(rknn_core_mask &core_mask) {
+template<class OUTPUT>
+void RknnInferBase<OUTPUT>::set_npu_core(rknn_core_mask &core_mask) {
     CHECK_RKNN(rknn_set_core_mask(ctx_, core_mask));
 }
 	
-
-void RknnInferBase::init_io_tensor_mem() {
+template<class OUTPUT>
+void RknnInferBase<OUTPUT>::init_io_tensor_mem() {
     input_mems_.resize(io_num_.n_input);
     output_mems_.resize(io_num_.n_output);
 

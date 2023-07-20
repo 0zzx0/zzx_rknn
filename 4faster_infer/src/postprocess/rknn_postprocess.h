@@ -61,13 +61,13 @@ class YoloxPostProcess {
 public:
     YoloxPostProcess(int input_size, float prob_threshold, float nms_threshold, std::vector<rknn_tensor_attr> &output_attrs);
     ~YoloxPostProcess() { }
-    std::vector<ObjBox> process(int8_t *src, std::vector<int32_t> &zps, std::vector<float> &scales);
+    void process(int8_t *src, std::vector<ObjBox> &res_boxes, float img_scale, std::vector<int32_t> &zps, std::vector<float> &scales);
 
 private:
     std::vector<int> strides_{8, 16, 32};
     std::vector<GridAndStride> grid_strides_;
     std::vector<ObjBox> out_boxes;
-    std::vector<ObjBox> nms_boxes;
+    // std::vector<ObjBox> nms_boxes;
 
     int input_size_;
     int num_grid_;
