@@ -24,7 +24,7 @@ public:
     virtual ~RknnInferBase();
 
     // 初始化
-    virtual void Init(const std::string &model_path, const float nms_threshold, const float conf_threshold);
+    virtual void Init(const std::string &model_path);
     // 打印sdk和驱动的版本信息
     void print_version_info();
     // 获得输入输出数量
@@ -61,8 +61,6 @@ protected:
     int input_h_;
     int input_w_;
     int input_channel_;
-	float nms_threshold_;     // nms阈值
-	float conf_threshold_;    // 置信度
 
 };
 

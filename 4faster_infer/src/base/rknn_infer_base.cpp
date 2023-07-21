@@ -25,11 +25,9 @@ RknnInferBase<OUTPUT>::~RknnInferBase() {
 
 
 template<class OUTPUT>
-void RknnInferBase<OUTPUT>::Init(const std::string &model_path, const float nms_threshold, const float conf_threshold) {
+void RknnInferBase<OUTPUT>::Init(const std::string &model_path) {
     
     this->model_path_ = model_path;
-    this->nms_threshold_ = nms_threshold;
-    this->conf_threshold_ = conf_threshold;
 
     // 加载文件
     int model_data_size = 0;

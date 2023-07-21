@@ -19,7 +19,7 @@ RknnYolox::~RknnYolox() {
 
 RknnYolox::RknnYolox(const std::string &model_path, const float nms_threshold, const float conf_threshold) {
 
-    Init(model_path, nms_threshold, conf_threshold);
+    Init(model_path);
     postprocess_ = std::make_shared<YoloxPostProcess>(input_h_, conf_threshold, nms_threshold, output_attrs_, out_zps_, out_scales_);
 }
 
