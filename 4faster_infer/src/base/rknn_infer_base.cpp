@@ -40,42 +40,10 @@ void RknnInferBase<OUTPUT>::Init(const std::string &model_path) {
     print_version_info();
 
     // 获取输入输出数量
-    get_io_num();
-
-    // 获取io attrs
-    get_io_attrs();
-
-    // 获取输入形状
-    get_input_hwc();
-
-    // 获取反量化参数
-    for (int i = 0; i < io_num_.n_output; ++i) {
-		out_scales_.push_back(output_attrs_[i].scale);
-		out_zps_.push_back(output_attrs_[i].zp);
-	}
-
-    // set_npu_core();
-
-    // 初始化输入输出
-    init_io_tensor_mem();
-
-}
-
-template<class OUTPUT>
-void RknnInferBase<OUTPUT>::print_version_info(){
-    rknn_sdk_version version;
-	CHECK_RKNN(rknn_query(ctx_, RKNN_QUERY_SDK_VERSION, &version, sizeof(rknn_sdk_version)));
-	printf("sdk version: %s driver version: %s\n", version.api_version, version.drv_version);
-}
-
-template<class OUTPUT>
-void RknnInferBase<OUTPUT>::get_io_num() {
     CHECK_RKNN(rknn_query(ctx_, RKNN_QUERY_IN_OUT_NUM, &io_num_, sizeof(io_num_)));
 	printf("IO Info: input num: %d, output num: %d\n", io_num_.n_input, io_num_.n_output);
-}
 
-template<class OUTPUT>
-void RknnInferBase<OUTPUT>::get_io_attrs() {
+    // 获取io attrs
     input_attrs_.resize(io_num_.n_input);
     output_attrs_.resize(io_num_.n_output);
 
@@ -92,10 +60,32 @@ void RknnInferBase<OUTPUT>::get_io_attrs() {
 		printf("output information:\n");
 		dump_tensor_attr(&(output_attrs_[i]));
 	}
+
+
+    // 获取反量化参数
+    for (int i = 0; i < io_num_.n_output; ++i) {
+		out_scales_.push_back(output_attrs_[i].scale);
+		out_zps_.push_back(output_attrs_[i].zp);
+	}
+
+    // set_npu_core();
+
+     // 获取输入形状
+    set_input_hwc();
+    // 初始化输入输出
+    init_io_tensor_mem();
+
 }
 
 template<class OUTPUT>
-void RknnInferBase<OUTPUT>::get_input_hwc(){
+void RknnInferBase<OUTPUT>::print_version_info() {
+    rknn_sdk_version version;
+	CHECK_RKNN(rknn_query(ctx_, RKNN_QUERY_SDK_VERSION, &version, sizeof(rknn_sdk_version)));
+	printf("sdk version: %s driver version: %s\n", version.api_version, version.drv_version);
+}
+
+template<class OUTPUT>
+void RknnInferBase<OUTPUT>::set_input_hwc() {
     if (input_attrs_[0].fmt == RKNN_TENSOR_NCHW) {
 		input_channel_ = input_attrs_[0].dims[1];
 		input_h_  = input_attrs_[0].dims[2];
@@ -133,8 +123,7 @@ void RknnInferBase<OUTPUT>::init_io_tensor_mem() {
 }
 
 
-
-static void dump_tensor_attr(rknn_tensor_attr* attr){
+static void dump_tensor_attr(rknn_tensor_attr* attr) {
 
 	std::string shape_str = attr->n_dims < 1 ? "" : std::to_string(attr->dims[0]);
 	for (int i = 1; i < attr->n_dims; ++i) {

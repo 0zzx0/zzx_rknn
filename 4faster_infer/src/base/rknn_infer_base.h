@@ -27,19 +27,16 @@ public:
     virtual void Init(const std::string &model_path);
     // 打印sdk和驱动的版本信息
     void print_version_info();
-    // 获得输入输出数量
-    void get_io_num();
-    // 获得输入输出信息
-    void get_io_attrs();
-    // 获得输入形状
-    void get_input_hwc();
+
     // 设置npu核心
     void set_npu_core(rknn_core_mask &core_mask);
 
+     // 获得输入形状
+    virtual void set_input_hwc();           // 看情况是否重写，默认是单输入
     // 申请输入输出内存
     virtual void init_io_tensor_mem();      // 一般也要重写，指定输入输出类型和大小
     // 推理图片
-    virtual OUTPUT infer(cv::Mat &img) = 0; // 纯虚函数
+    virtual OUTPUT infer(const cv::Mat &img) = 0; // 纯虚函数
 
 
 protected:

@@ -2,7 +2,7 @@
 
 #include <memory>
 
-#include "../base/rknn_infer_base.cpp"
+#include "../base/rknn_infer_base.cpp"  // 注意这个地方，需要包含实现文件。因为是模板类，仅包含头文件会链接错误。
 #include "../postprocess/rknn_postprocess.h"
 
 
@@ -17,7 +17,7 @@ public:
     RknnYolox(const std::string &model_path, const float nms_threshold, const float conf_threshold);
     virtual ~RknnYolox();
 
-    virtual std::vector<ObjBox> infer(cv::Mat &img) override; // yolox推理
+    virtual std::vector<ObjBox> infer(const cv::Mat &img) override; // yolox推理
 
 private:
     std::shared_ptr<YoloxPostProcess> postprocess_;

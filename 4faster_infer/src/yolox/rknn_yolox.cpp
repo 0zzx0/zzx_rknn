@@ -1,7 +1,7 @@
 #include "rknn_yolox.h"
 
 
-cv::Mat static_resize(cv::Mat& img, int input_w, int input_h) {
+cv::Mat static_resize(const cv::Mat& img, int input_w, int input_h) {
     float r = std::min(input_w / (img.cols*1.0), input_h / (img.rows*1.0));
     // r = std::min(r, 1.0f);
     int unpad_w = r * img.cols;
@@ -24,7 +24,7 @@ RknnYolox::RknnYolox(const std::string &model_path, const float nms_threshold, c
 }
 
 
-std::vector<ObjBox> RknnYolox::infer(cv::Mat &img) {
+std::vector<ObjBox> RknnYolox::infer(const cv::Mat &img) {
 
     auto img_out = static_resize(img, input_w_, input_h_);
     float img_scale =  std::min(input_w_ / (img.cols*1.0), input_h_ / (img.rows*1.0));
