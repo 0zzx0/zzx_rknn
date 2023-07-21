@@ -75,7 +75,12 @@ static void generate_grids_and_stride(std::vector<int> &strides,std::vector<Grid
 
 
 
-YoloxPostProcess::YoloxPostProcess(int input_size, float prob_threshold, float nms_threshold, std::vector<rknn_tensor_attr> &output_attrs){
+YoloxPostProcess::YoloxPostProcess(int input_size, 
+                                    float prob_threshold, 
+                                    float nms_threshold, 
+                                    std::vector<rknn_tensor_attr> &output_attrs,  
+                                    std::vector<int32_t> &zps, 
+                                    std::vector<float> &scales){
     input_size_ = input_size;
     prob_threshold_ = prob_threshold;
     nms_threshold_ = nms_threshold;
@@ -87,46 +92,42 @@ YoloxPostProcess::YoloxPostProcess(int input_size, float prob_threshold, float n
 
     each_grid_long_ = output_attrs[0].dims[2];
 
+    zp_ = zps[0];
+    scale_ = scales[0];
+
 }
 
-void YoloxPostProcess::process(int8_t *src, std::vector<ObjBox> &res_boxes, float img_scale,  std::vector<int32_t> &zps, std::vector<float> &scales) {
+void YoloxPostProcess::process(int8_t *src, std::vector<ObjBox> &results, float img_scale) {
 
     out_boxes.clear();
     // nms_boxes.clear();
+    results.clear();
 
     const int8_t *feat_ptr = src;
     
-    int32_t zp = zps[0];
-    float scale = scales[0];
-    
     for (int anchor_idx = 0; anchor_idx < num_anchors_; anchor_idx++) {
 
-        const int grid0 = grid_strides_[anchor_idx].grid0;
-        const int grid1 = grid_strides_[anchor_idx].grid1;
-        const int stride = grid_strides_[anchor_idx].stride;
-
-        float x_center = (deqnt_affine_to_f32(feat_ptr[0], zp, scale) + grid0) * stride;
-        float y_center = (deqnt_affine_to_f32(feat_ptr[1], zp, scale) + grid1) * stride;
-        float w = exp(deqnt_affine_to_f32(feat_ptr[2], zp, scale)) * stride;
-        float h = exp(deqnt_affine_to_f32(feat_ptr[3], zp, scale)) * stride;
-        float x0 = x_center - w * 0.5f;
-        float y0 = y_center - h * 0.5f;
-        float x1 = x_center + w * 0.5f;
-        float y1 = y_center + h * 0.5f;
-
-
-        float box_objectness = deqnt_affine_to_f32(feat_ptr[4], zp, scale);    
+        float box_objectness = deqnt_affine_to_f32(feat_ptr[4], zp_, scale_);    
         for (int class_idx = 0; class_idx < num_class_; class_idx++){
 
-            float box_cls_score = deqnt_affine_to_f32(feat_ptr[5 + class_idx], zp, scale) ;
+            float box_cls_score = deqnt_affine_to_f32(feat_ptr[5 + class_idx], zp_, scale_) ;
             float box_prob = box_objectness * box_cls_score;
             if (box_prob > prob_threshold_){
 
+                const int grid0 = grid_strides_[anchor_idx].grid0;
+                const int grid1 = grid_strides_[anchor_idx].grid1;
+                const int stride = grid_strides_[anchor_idx].stride;
+
+                float x_center = (deqnt_affine_to_f32(feat_ptr[0], zp_, scale_) + grid0) * stride;
+                float y_center = (deqnt_affine_to_f32(feat_ptr[1], zp_, scale_) + grid1) * stride;
+                float w = exp(deqnt_affine_to_f32(feat_ptr[2], zp_, scale_)) * stride;
+                float h = exp(deqnt_affine_to_f32(feat_ptr[3], zp_, scale_)) * stride;
+
                 ObjBox obj;
-                obj.x1 = x0 / img_scale;
-                obj.y1 = y0 / img_scale;
-                obj.x2 = x1 / img_scale;
-                obj.y2 = y1 / img_scale;
+                obj.x1 = (x_center - w * 0.5f) / img_scale;
+                obj.y1 = (y_center - h * 0.5f) / img_scale;
+                obj.x2 = (x_center + w * 0.5f) / img_scale;
+                obj.y2 = (y_center + h * 0.5f) / img_scale;
 
                 obj.category = class_idx;
                 obj.score = box_prob;
@@ -140,7 +141,7 @@ void YoloxPostProcess::process(int8_t *src, std::vector<ObjBox> &res_boxes, floa
 
     } // point anchor loop
 
-    nms(out_boxes, res_boxes, nms_threshold_);
+    nms(out_boxes, results, nms_threshold_);
     return ;
 }
 

@@ -36,10 +36,10 @@ public:
     // 设置npu核心
     void set_npu_core(rknn_core_mask &core_mask);
 
-    // 申请输入输出内存 建议重写
+    // 申请输入输出内存
     virtual void init_io_tensor_mem();      // 一般也要重写，指定输入输出类型和大小
-    // 推理 必须重写
-    virtual void infer(cv::Mat &img, OUTPUT &results) = 0; // 纯虚函数
+    // 推理图片
+    virtual OUTPUT infer(cv::Mat &img) = 0; // 纯虚函数
 
 
 protected:

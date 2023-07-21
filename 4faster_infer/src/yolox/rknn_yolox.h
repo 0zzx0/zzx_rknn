@@ -7,7 +7,7 @@
 
 
 // resize
-
+static cv::Mat static_resize(cv::Mat& img, int input_w, int input_h);
 
 
 using RknnInferBaseObjBox = RknnInferBase<std::vector<ObjBox>>;
@@ -15,15 +15,13 @@ class RknnYolox :public RknnInferBaseObjBox{
 
 public:
     RknnYolox(const std::string &model_path, const float nms_threshold, const float conf_threshold);
-    ~RknnYolox() { }
+    virtual ~RknnYolox();
 
-    virtual void infer(cv::Mat &img, std::vector<ObjBox> &results) override; // 纯虚函数
-    float static_resize(cv::Mat& img);
+    virtual std::vector<ObjBox> infer(cv::Mat &img) override; // yolox推理
 
 private:
     std::shared_ptr<YoloxPostProcess> postprocess_;
-    // cv::Mat resize_img;
-    cv::Mat resize_img; 
+    std::vector<ObjBox> results_;
 };
 
 

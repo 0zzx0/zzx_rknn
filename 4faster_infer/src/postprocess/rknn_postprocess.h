@@ -59,9 +59,14 @@ static void generate_grids_and_stride(std::vector<int> &strides,std::vector<Grid
 class YoloxPostProcess {
 
 public:
-    YoloxPostProcess(int input_size, float prob_threshold, float nms_threshold, std::vector<rknn_tensor_attr> &output_attrs);
-    ~YoloxPostProcess() { }
-    void process(int8_t *src, std::vector<ObjBox> &res_boxes, float img_scale, std::vector<int32_t> &zps, std::vector<float> &scales);
+    YoloxPostProcess(int input_size, 
+                        float prob_threshold, 
+                        float nms_threshold, 
+                        std::vector<rknn_tensor_attr> &output_attrs,
+                        std::vector<int32_t> &zps, 
+                        std::vector<float> &scales);
+    ~YoloxPostProcess() = default;
+    void process(int8_t *src, std::vector<ObjBox> &results, float img_scale);
 
 private:
     std::vector<int> strides_{8, 16, 32};
@@ -78,6 +83,9 @@ private:
 
     float prob_threshold_;
     float nms_threshold_;
+
+    int32_t zp_;
+    float scale_;
 
 };
 

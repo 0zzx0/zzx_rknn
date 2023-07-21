@@ -20,8 +20,9 @@ RknnInferBase<OUTPUT>::~RknnInferBase() {
     }
 
     CHECK_RKNN(rknn_destroy(ctx_));
-    printf("release over! ");
+    printf("release over! \n");
 }
+
 
 template<class OUTPUT>
 void RknnInferBase<OUTPUT>::Init(const std::string &model_path, const float nms_threshold, const float conf_threshold) {
@@ -142,7 +143,7 @@ static void dump_tensor_attr(rknn_tensor_attr* attr){
 		shape_str += ", " + std::to_string(attr->dims[i]);
 	}
 
-	printf("  index=%d, name=%s, n_dims=%d, dims=[%s], n_elems=%d, size=%d, w_stride = %d, size_with_stride=%d, fmt=%s, "
+	printf("\tindex=%d, name=%s, n_dims=%d, dims=[%s], n_elems=%d, size=%d, w_stride = %d, size_with_stride=%d, fmt=%s, "
 			"type=%s, qnt_type=%s, "
 			"zp=%d, scale=%f\n",
 			attr->index, attr->name, attr->n_dims, shape_str.c_str(), attr->n_elems, attr->size, attr->w_stride,
