@@ -140,7 +140,7 @@ void YoloxPostProcess::process(int8_t *src, std::vector<ObjBox> &results, float 
         feat_ptr += each_grid_long_;
 
     } // point anchor loop
-
+    
     nms(out_boxes, results, nms_threshold_);
     return ;
 }

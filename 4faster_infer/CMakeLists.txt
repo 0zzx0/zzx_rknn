@@ -22,20 +22,23 @@ set(RGA_PATH /home/orangepi/source_code/RK3588_3rdparty/rga/RK3588)
 set(RGA_LIB ${RGA_PATH}/lib/Linux/${LIB_ARCH}/librga.so)
 include_directories( ${RGA_PATH}/include)
 
+# set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -pthread ")
 
 add_executable(rknn_yolo
 		src/main.cpp
-		src/base/rknn_infer_base.cpp
 		src/base/rknn_infer_base.h
+		src/base/rknn_infer_thread_base.h
 		src/base/tools.h
 		src/postprocess/rknn_postprocess.cpp
 		src/postprocess/rknn_postprocess.h
 		src/yolox/rknn_yolox.cpp
 		src/yolox/rknn_yolox.h
+		src/yolox/rknn_yolox_thread.h
 )
 
 target_link_libraries(rknn_yolo
 	${RKNN_RT_LIB}
 	${RGA_LIB}
 	${OpenCV_LIBS}
+	pthread
 )

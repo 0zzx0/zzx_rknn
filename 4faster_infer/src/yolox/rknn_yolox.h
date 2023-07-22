@@ -2,7 +2,7 @@
 
 #include <memory>
 
-#include "../base/rknn_infer_base.cpp"  // 注意这个地方，需要包含实现文件。因为是模板类，仅包含头文件会链接错误。
+#include "../base/rknn_infer_base.h" 
 #include "../postprocess/rknn_postprocess.h"
 
 
