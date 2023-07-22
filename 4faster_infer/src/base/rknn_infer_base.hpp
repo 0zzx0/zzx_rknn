@@ -32,7 +32,7 @@ static void dump_tensor_attr(rknn_tensor_attr* attr) {
 		shape_str += ", " + std::to_string(attr->dims[i]);
 	}
 
-	printf("\tindex=%d, name=%s, n_dims=%d, dims=[%s], n_elems=%d, size=%d, w_stride = %d, size_with_stride=%d, fmt=%s, "
+	printf("    index=%d, name=%s, n_dims=%d, dims=[%s], n_elems=%d, size=%d, w_stride = %d, size_with_stride=%d, fmt=%s, "
 			"type=%s, qnt_type=%s, "
 			"zp=%d, scale=%f\n",
 			attr->index, attr->name, attr->n_dims, shape_str.c_str(), attr->n_elems, attr->size, attr->w_stride,
@@ -160,7 +160,7 @@ void RknnInferBase<OUTPUT>::Init(const std::string &model_path) {
 
     // 获取输入输出数量
     CHECK_RKNN(rknn_query(ctx_, RKNN_QUERY_IN_OUT_NUM, &io_num_, sizeof(io_num_)));
-	printf("IO Info: input num: %d, output num: %d\n", io_num_.n_input, io_num_.n_output);
+	printf("io number info: input num: %d, output num: %d\n", io_num_.n_input, io_num_.n_output);
 
     // 获取io attrs
     input_attrs_.resize(io_num_.n_input);
@@ -169,14 +169,14 @@ void RknnInferBase<OUTPUT>::Init(const std::string &model_path) {
 	for (int i = 0; i < io_num_.n_input; i++) {
 		input_attrs_[i].index = i;
 		CHECK_RKNN(rknn_query(ctx_, RKNN_QUERY_INPUT_ATTR, &(input_attrs_[i]), sizeof(rknn_tensor_attr)));
-		printf("input information:\n");
+		printf("input info:\n");
 		dump_tensor_attr(&(input_attrs_[i]));
 	}
 
 	for (int i = 0; i < io_num_.n_output; i++) {
 		output_attrs_[i].index = i;
 		CHECK_RKNN(rknn_query(ctx_, RKNN_QUERY_OUTPUT_ATTR, &(output_attrs_[i]), sizeof(rknn_tensor_attr)));
-		printf("output information:\n");
+		printf("output info:\n");
 		dump_tensor_attr(&(output_attrs_[i]));
 	}
 

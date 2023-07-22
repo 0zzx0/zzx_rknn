@@ -1,3 +1,13 @@
+/**
+ * @file rknn_postprocess.cpp
+ * @author zzx
+ * @brief 后处理类的实现
+ * @version 0.1
+ * @date 2023-07-22
+ * 
+ * @copyright Copyright (c) 2023
+ * 
+ */
 #include "rknn_postprocess.h"
 
 
@@ -99,6 +109,8 @@ YoloxPostProcess::YoloxPostProcess(int input_size,
 
 void YoloxPostProcess::process(int8_t *src, std::vector<ObjBox> &results, float img_scale) {
 
+    
+    // std::vector<ObjBox> out_boxes;  // nms前
     out_boxes.clear();
     // nms_boxes.clear();
     results.clear();

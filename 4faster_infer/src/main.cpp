@@ -24,6 +24,19 @@ void testv1() {
 		cv::putText(img, std::to_string(a.category), cv::Point(a.x1, a.y1 + 12), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 0));
 	}
 
+
+	cv::Mat img1 = cv::imread("../img/6.jpg");
+	// infer once
+    auto res1 = model->infer(img1);
+    for (auto a : res1) {
+		std::cout<<"ans2: "<<a.x1<<" "<<a.y1<<" "<<a.x2<<" "<<a.y2 <<" "<<a.score<<" "<<a.category<< std::endl; 
+		cv::rectangle(img1, cv::Point(a.x1, a.y1), cv::Point(a.x2, a.y2), cv::Scalar(255, 0, 0, 255), 3);
+		cv::putText(img1, std::to_string(a.category), cv::Point(a.x1, a.y1 + 12), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 0));
+		cv::imwrite("2.jpg", img1);
+	}
+
+
+
 	// warmup
 	for (int i = 0; i < 50; ++i) {
 		model->infer(img);
@@ -91,7 +104,7 @@ void test_thread() {
 
 
 int main() {
-	// testv1();
+	testv1();
 	test_thread();
     
 

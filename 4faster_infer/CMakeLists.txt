@@ -24,16 +24,18 @@ include_directories( ${RGA_PATH}/include)
 
 # set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -pthread ")
 
-add_executable(rknn_yolo
+add_executable(rknn_yolo 
 		src/main.cpp
-		src/base/rknn_infer_base.h
-		src/base/rknn_infer_thread_base.h
-		src/base/tools.h
+		src/base/rknn_infer_base.hpp
+		src/base/rknn_infer_thread_base.hpp
+		src/base/tools.hpp
 		src/postprocess/rknn_postprocess.cpp
 		src/postprocess/rknn_postprocess.h
 		src/yolox/rknn_yolox.cpp
 		src/yolox/rknn_yolox.h
+		src/yolox/rknn_yolox_thread.cpp
 		src/yolox/rknn_yolox_thread.h
+		src/yolox/yolox_tools.hpp
 )
 
 target_link_libraries(rknn_yolo

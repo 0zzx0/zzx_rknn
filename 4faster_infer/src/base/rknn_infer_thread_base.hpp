@@ -65,26 +65,6 @@ public:
         printf("RknnInferThreadBase release!\n");
     }
 
-    // void deep_copy_rknn(RknnInferThreadBase *p) {    // 拷贝，实现多线程的权重复用
-    //     CHECK_RKNN(rknn_dup_context(&p->ctx_, &this->ctx_));
-    //     this->io_num_ = p->io_num_;
-    //     this->input_attrs_ = p->input_attrs_;
-    //     this->output_attrs_ = p->output_attrs_;
-
-    //     this->input_w_ = p->input_w_;
-    //     this->input_w_ = p->input_w_;
-    //     this->input_w_ = p->input_w_;
-
-    //     this->out_scales_ = p->out_scales_;
-    //     this->out_zps_ = p->out_zps_;
-
-    //     init_io_tensor_mem();
-
-    //     init_task_info();
-
-    // }
-    // virtual void init_task_info() = 0 ;              // 任务类初始化
-
 
     /**
      * @brief 初始化worker线程 即检测线程

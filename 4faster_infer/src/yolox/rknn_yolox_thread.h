@@ -1,81 +1,84 @@
 #pragma once
 
+/**
+ * @file rknn_yolox_thread.h
+ * @author zzx
+ * @brief yolox多线程
+ * @version 0.1
+ * @date 2023-07-22
+ * 
+ * @copyright Copyright (c) 2023
+ * 
+ */
 #include <memory>
 
 #include "../base/rknn_infer_thread_base.hpp"  // 注意这个地方，需要包含实现文件。因为是模板类，仅包含头文件会链接错误。
 #include "../postprocess/rknn_postprocess.h"
+#include "yolox_tools.hpp"
 
-
-// resize
-cv::Mat static_resize_for_thread(const cv::Mat& img, int input_w, int input_h) {
-    float r = std::min(input_w / (img.cols*1.0), input_h / (img.rows*1.0));
-    // r = std::min(r, 1.0f);
-    int unpad_w = r * img.cols;
-    int unpad_h = r * img.rows;
-    cv::Mat re(unpad_h, unpad_w, CV_8UC3);
-    cv::resize(img, re, re.size());
-    cv::Mat out(input_h, input_w, CV_8UC3, cv::Scalar(114, 114, 114));
-    re.copyTo(out(cv::Rect(0, 0, re.cols, re.rows)));
-    return out;
-}
 
 using RknnInferThreadBaseYolo = RknnInferThreadBase<std::vector<ObjBox>, float>;
+/**
+ * @brief yolox多线程推理类
+ * 
+ */
 class RknnYoloxThread :public RknnInferThreadBaseYolo {
 
 public:
-    RknnYoloxThread(const std::string &model_path, const float nms_threshold, const float conf_threshold) {
-        Init(model_path);
-        postprocess_ = std::make_shared<YoloxPostProcess>(input_h_, conf_threshold, nms_threshold, output_attrs_, out_zps_, out_scales_);
+    /**
+     * @brief yolox 推理基类对象
+     * 
+     * @param model_path rknn模型路径
+     * @param nms_threshold nms阈值
+     * @param conf_threshold 置信度阈值
+     */
+    RknnYoloxThread(const std::string &model_path, const float nms_threshold, const float conf_threshold);
+    
+    /**
+     * @brief 析构
+     * 
+     */
+    virtual ~RknnYoloxThread();
 
-        startup();
 
-    }
-    // RknnYoloxThread(const float nms_threshold, const float conf_threshold) {
-    //     nms_threshold_ = nms_threshold;
-    //     conf_threshold_ = conf_threshold;
-    // }
-    virtual ~RknnYoloxThread() { printf("子类析构\n");};
+    /**
+     * @brief 工作线程函数 不断从工作队列中获取图片推理
+     * 
+     */
+    void worker();
 
-    // void init_task_info() {
-    //     postprocess_ = std::make_shared<YoloxPostProcess>(input_h_, conf_threshold_, nms_threshold_, output_attrs_, out_zps_, out_scales_);
-    // }
-
-    void worker() {
-
-        while(get_job_and_wait()) {
-
-            memcpy(input_mems_[0]->virt_addr, fetch_job_.input.data, input_attrs_[0].size_with_stride);
-            CHECK_RKNN(rknn_run(ctx_, NULL));
-            postprocess_->process((int8_t *)output_mems_[0]->virt_addr, results, fetch_job_.additional);
-            fetch_job_.pro->set_value(results);
-        }
-        printf("worker over! \n");
-
-    }
-
-    bool preprocess(Job& job, const cv::Mat &img) {
-        job.input = static_resize_for_thread(img, input_w_, input_h_);
-        job.additional = std::min(input_w_ / (img.cols*1.0), input_h_ / (img.rows*1.0));
-
-        return true;
-    }
-
+    /**
+     * @brief 预处理过程
+     * 
+     * @param job 工作抽象数据结构
+     * @param img 输入图片
+     * @return true 成功
+     * @return false 失败
+     */
+    bool preprocess(Job& job, const cv::Mat &img);
 
 
 private:
-    std::shared_ptr<YoloxPostProcess> postprocess_;
-    std::vector<ObjBox> results;
-    float nms_threshold_;
-    float conf_threshold_;
+    std::shared_ptr<YoloxPostProcess> postprocess_; // 后处理类指针
+    std::vector<ObjBox> results;    // 结果
+    float nms_threshold_;           // nms阈值
+    float conf_threshold_;          // 置信度阈值
 };
 
 
-
-std::shared_ptr<RknnInferThreadBaseYolo> create_infer_yolox_thread(const std::string &model_path, const float nms_threshold, const float conf_threshold) {
-
-    return std::make_shared<RknnYoloxThread>(model_path, nms_threshold, conf_threshold);
-}
-
+/**
+ * @brief 创建一个RknnYoloxThread对象 返回一个父类RknnInferThreadBaseYolo指针
+ * 
+ * @param model_path rknn模型路径
+ * @param nms_threshold nms阈值
+ * @param conf_threshold 置信度阈值
+ * 
+ * @return std::shared_ptr<RknnInferThreadBaseYolo> 返回父类指针
+ */
+std::shared_ptr<RknnInferThreadBaseYolo> create_infer_yolox_thread(const std::string &model_path, 
+                                                                   const float nms_threshold, 
+                                                                   const float conf_threshold
+                                                                   );
 
 
 

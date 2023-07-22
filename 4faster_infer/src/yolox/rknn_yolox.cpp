@@ -1,17 +1,15 @@
+/**
+ * @file rknn_yolox.cpp
+ * @author zzx
+ * @brief yolox推理类的实现
+ * @version 0.1
+ * @date 2023-07-22
+ * 
+ * @copyright Copyright (c) 2023
+ * 
+ */
+
 #include "rknn_yolox.h"
-
-
-cv::Mat static_resize(const cv::Mat& img, int input_w, int input_h) {
-    float r = std::min(input_w / (img.cols*1.0), input_h / (img.rows*1.0));
-    // r = std::min(r, 1.0f);
-    int unpad_w = r * img.cols;
-    int unpad_h = r * img.rows;
-    cv::Mat re(unpad_h, unpad_w, CV_8UC3);
-    cv::resize(img, re, re.size());
-    cv::Mat out(input_h, input_w, CV_8UC3, cv::Scalar(114, 114, 114));
-    re.copyTo(out(cv::Rect(0, 0, re.cols, re.rows)));
-    return out;
-}
 
 RknnYolox::~RknnYolox() {
     printf("begin release! \n");
@@ -34,7 +32,6 @@ std::vector<ObjBox> RknnYolox::infer(const cv::Mat &img) {
 
     return results_;
 }
-
 
 
 
