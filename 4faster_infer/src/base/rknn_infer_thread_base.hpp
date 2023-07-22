@@ -5,7 +5,7 @@
 #include <mutex>
 #include <condition_variable>
 
-#include "rknn_infer_base.h"
+#include "rknn_infer_base.hpp"
 
 
 template<class OUTPUT, class JobAdditional=float>

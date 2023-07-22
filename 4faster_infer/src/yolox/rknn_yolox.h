@@ -2,7 +2,7 @@
 
 #include <memory>
 
-#include "../base/rknn_infer_base.h" 
+#include "../base/rknn_infer_base.hpp" 
 #include "../postprocess/rknn_postprocess.h"
 
 

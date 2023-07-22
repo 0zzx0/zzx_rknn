@@ -8,7 +8,7 @@
 
 
 #include "rknn_api.h"
-#include "tools.h"
+#include "tools.hpp"
 
 
 static void dump_tensor_attr(rknn_tensor_attr* attr) {
