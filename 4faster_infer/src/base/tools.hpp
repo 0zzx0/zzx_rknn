@@ -1,9 +1,21 @@
-#ifndef TOOLS_H
-#define TOOLS_H
+#pragma once
+/**
+ * @file tools.hpp
+ * @author zzx
+ * @brief 一些必备基础功能函数
+ * @version 0.1
+ * @date 2023-07-22
+ * 
+ * @copyright Copyright (c) 2023
+ * 
+ */
 
 #include "rga.h"
 
-
+/**
+ * @brief 通过检查RKNN部分api返回值，判断是否正常运行
+ * 
+ */
 #define CHECK_RKNN(call)                    \
 do                                          \
 {                                           \
@@ -18,7 +30,10 @@ do                                          \
 } while (0)
 
 
-
+/**
+ * @brief 通过检查RGA部分api返回值，判断是否正常运行
+ * 
+ */
 #define CHECK_RKNN_RGA(call)                \
 do                                          \
 {                                           \
@@ -34,7 +49,14 @@ do                                          \
 
 
 
-
+/**
+ * @brief 读取文件信息
+ * 
+ * @param fp 文件头地址
+ * @param ofst 偏移量
+ * @param sz 数据大小
+ * @return unsigned char* 返回数据
+ */
 static unsigned char* load_data(FILE* fp, size_t ofst, size_t sz){
     unsigned char* data;
     int ret;
@@ -60,6 +82,14 @@ static unsigned char* load_data(FILE* fp, size_t ofst, size_t sz){
     return data;
 }
 
+
+/**
+ * @brief 
+ * 
+ * @param filename 文件路径
+ * @param model_size 模型大小
+ * @return unsigned char* 模型数据指针
+ */
 static unsigned char* load_model(const char* filename, int* model_size) {
 
     FILE*  fp;
@@ -84,5 +114,3 @@ static unsigned char* load_model(const char* filename, int* model_size) {
 
 
 
-
-#endif

@@ -1,5 +1,14 @@
 #pragma once
-
+/**
+ * @file rknn_infer_thread_base.hpp
+ * @author zzx
+ * @brief 生产者消费者多线程推理基类
+ * @version 0.1
+ * @date 2023-07-22
+ * 
+ * @copyright Copyright (c) 2023
+ * 
+ */
 #include <future>
 #include <thread>
 #include <mutex>
@@ -8,23 +17,52 @@
 #include "rknn_infer_base.hpp"
 
 
+/**
+ * @brief 生产者消费者推理基类
+ * 
+ * @tparam OUTPUT 输出类型
+ * @tparam JobAdditional 备用自定义结构
+ */
 template<class OUTPUT, class JobAdditional=float>
-class RknnInferThreadBase : public RknnInferBase<OUTPUT>
-{
+class RknnInferThreadBase : public RknnInferBase<OUTPUT> {
 
 public:
-    struct Job{
-            cv::Mat input;
-            OUTPUT output;
-            std::shared_ptr<std::promise<OUTPUT>> pro;
-            JobAdditional additional;
 
+    /**
+     * @brief 工作结构体
+     * 
+     */
+    struct Job {
+        cv::Mat input;
+        OUTPUT output;
+        std::shared_ptr<std::promise<OUTPUT>> pro;
+        JobAdditional additional;
     };
 
-    RknnInferThreadBase() { };
+    /**
+     * @brief 销毁资源 清空工作队列 关闭消费者线程
+     * 
+     */
     virtual ~RknnInferThreadBase() {
-        printf("thread over!\n");
-        stop();
+        run_ = false;
+        cond_.notify_all();
+
+        // 清空工作队列
+        {
+            std::unique_lock<std::mutex> l(jobs_lock_);
+            while(!jobs_.empty()){
+                auto& item = jobs_.front();
+                if(item.pro)
+                    item.pro->set_value(OUTPUT());
+                jobs_.pop();
+            }
+        };
+
+        if(worker_->joinable()){
+            worker_->join();
+            worker_.reset();
+        }
+        printf("RknnInferThreadBase release!\n");
     }
 
     // void deep_copy_rknn(RknnInferThreadBase *p) {    // 拷贝，实现多线程的权重复用
@@ -47,29 +85,11 @@ public:
     // }
     // virtual void init_task_info() = 0 ;              // 任务类初始化
 
-     // 停止 由析构函数调用
-    void stop(){
-        run_ = false;
-        cond_.notify_all();
 
-        // 清空工作队列
-        {
-            std::unique_lock<std::mutex> l(jobs_lock_);
-            while(!jobs_.empty()){
-                auto& item = jobs_.front();
-                if(item.pro)
-                    item.pro->set_value(OUTPUT());
-                jobs_.pop();
-            }
-        };
-
-        if(worker_->joinable()){
-            worker_->join();
-            worker_.reset();
-        }
-    }
-
-    // 启动 初始化线程 用一个promise等待worker中的初始化结束
+    /**
+     * @brief 初始化worker线程 即检测线程
+     * 
+     */
     void startup(){
 
         run_ = true;
@@ -77,16 +97,21 @@ public:
     }
 
 
-    // 可以理解成生产者
+    /**
+     * @brief 提交图片任务 生产者
+     * 
+     * @param img 检测图片
+     * @return std::shared_future<OUTPUT> 返回std::future的OUTPUT
+     */
     virtual std::shared_future<OUTPUT> commit(const cv::Mat &img) {
         Job job;
         job.pro = std::make_shared<std::promise<OUTPUT>>();
+        // 预处理
         if(!preprocess(job, img)){
             job.pro->set_value(OUTPUT());
             return job.pro->get_future();
         }
-        
-        ////////////////////图片放入队列////////////////////////////
+        ////////////////////上锁提交图片到任务队列//////////////////////
         {
             std::unique_lock<std::mutex> l(jobs_lock_);
             jobs_.push(job);
@@ -95,7 +120,12 @@ public:
         return job.pro->get_future();
     }
 
-    // 获取任务 等待之前的任务执行完毕
+    /**
+     * @brief 从任务队列取图片
+     * 
+     * @return true 获取成功
+     * @return false 获取失败
+     */
     virtual bool get_job_and_wait(){
 
         std::unique_lock<std::mutex> l(jobs_lock_);
@@ -110,18 +140,37 @@ public:
         return true;
     }
 
+    /**
+     * @brief 预处理。纯虚函数
+     * 
+     * @param job 工作
+     * @param img 图片
+     * @return true 处理成功
+     * @return false 处理失败
+     */
     virtual bool preprocess(Job& job, const cv::Mat &img) = 0;
+
+    /**
+     * @brief 工作线程。纯虚函数
+     * 
+     */
     virtual void worker() = 0 ;
     
+    /**
+     * @brief 将父类纯虚函数转成普通虚函数。后续子类不再使用
+     * 
+     * @param img 
+     * @return OUTPUT 
+     */
     virtual OUTPUT infer(const cv::Mat &img) { return OUTPUT();}
   
 
 protected:
-    std::atomic<bool> run_;
-    std::mutex jobs_lock_;
-    std::shared_ptr<std::thread> worker_;
-    std::condition_variable cond_;
-
-    std::queue<Job> jobs_;
-    Job fetch_job_;
+    std::atomic<bool> run_;     // 运行状态
+    std::mutex jobs_lock_;      // 队列锁
+    std::condition_variable cond_;          // 条件变量
+    std::shared_ptr<std::thread> worker_;   // 工作线程
+    
+    std::queue<Job> jobs_;  // 工作队列
+    Job fetch_job_;         // 当前工作
 };
