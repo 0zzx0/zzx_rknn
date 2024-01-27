@@ -1,3 +1,6 @@
+# faster_rknn
+
+**2024-1-27**： 在CMakeLists.txt中增加ROS编译选项
 
 
 ## 耗时对比
