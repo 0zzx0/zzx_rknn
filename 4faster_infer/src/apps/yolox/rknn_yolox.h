@@ -12,9 +12,9 @@
 
 #include <memory>
 
-#include "../base/rknn_infer_base.hpp"
-#include "../postprocess/rknn_postprocess.h"
-#include "yolox_tools.hpp"
+#include "../../base/rknn_infer_base.hpp"
+#include "../../postprocess/rknn_postprocess.h"
+#include "../../preprocess/rknn_resize.hpp"
 
 using RknnInferBaseObjBox = RknnInferBase<std::vector<ObjBox>>;
 /**

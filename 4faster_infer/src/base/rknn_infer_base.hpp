@@ -62,29 +62,11 @@ public:
     virtual void Init(const std::string &model_path);
 
     /**
-     * @brief 打印sdk和驱动的版本信息
-     *
-     */
-    void print_version_info();
-
-    /**
      * @brief 设置npu核心
      *
      * @param core_mask rknn_core_mask类型 指定npu核心, 默认 RKNN_NPU_CORE_AUTO
      */
     void set_npu_core(rknn_core_mask &core_mask);
-
-    /**
-     * @brief 设置输入形状
-     *
-     */
-    virtual void set_input_hwc();  // 看情况是否重写，默认是单输入
-
-    /**
-     * @brief 申请输入输出内存
-     *
-     */
-    virtual void init_io_tensor_mem();  // 一般也要重写，指定输入输出类型和大小
 
     /**
      * @brief 推理图片, 基类必须重写
@@ -113,6 +95,27 @@ protected:
     int input_h_;        // 输入高度
     int input_w_;        // 输入宽度
     int input_channel_;  // 输入通道
+
+private:
+    /**
+     * @brief 打印sdk和驱动的版本信息
+     *
+     */
+    void print_version_info();
+    /**
+     * @brief 设置输入形状
+     *
+     */
+    virtual void set_input_hwc();  // 看情况是否重写，默认是单输入
+
+    /**
+     * @brief 申请输入输出内存
+     *
+     */
+    virtual void init_io_tensor_mem();  // 一般也要重写，指定输入输出类型和大小
+
+
+
 };
 
 template <class OUTPUT>

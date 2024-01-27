@@ -12,9 +12,9 @@
  */
 #include <memory>
 
-#include "../base/rknn_infer_thread_base.hpp"  // 注意这个地方，需要包含实现文件。因为是模板类，仅包含头文件会链接错误。
-#include "../postprocess/rknn_postprocess.h"
-#include "yolox_tools.hpp"
+#include "../../base/rknn_infer_thread_base.hpp"  // 注意这个地方，需要包含实现文件。因为是模板类，仅包含头文件会链接错误。
+#include "../../postprocess/rknn_postprocess.h"
+#include "../../preprocess/rknn_resize.hpp"
 
 using RknnInferThreadBaseYolo = RknnInferThreadBase<std::vector<ObjBox>, float>;
 /**

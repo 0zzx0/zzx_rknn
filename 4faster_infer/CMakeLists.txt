@@ -32,13 +32,19 @@ set(BASEFILES 	src/base/rknn_infer_base.hpp
 				src/base/tools.hpp
 				src/postprocess/rknn_postprocess.cpp
 				src/postprocess/rknn_postprocess.h
-				src/yolox/rknn_yolox.cpp
-				src/yolox/rknn_yolox.h
-				src/yolox/rknn_yolox_thread.cpp
-				src/yolox/rknn_yolox_thread.h
-				src/yolox/yolox_tools.hpp
+				src/preprocess/rknn_resize.hpp
+				
 )
-add_executable(faster_rknn src/main.cpp ${BASEFILES})
+set(YOLOX 	src/apps/yolox/rknn_yolox.cpp
+			src/apps/yolox/rknn_yolox.h
+			src/apps/yolox/rknn_yolox_thread.cpp
+			src/apps/yolox/rknn_yolox_thread.h
+)
+set(YOLOV8 	src/apps/yolov8-seg/rknn_yolov8_seg.cpp
+			src/apps/yolov8-seg/rknn_yolov8_seg.h
+
+)
+add_executable(faster_rknn src/main.cpp ${BASEFILES} ${YOLOX} ${YOLOV8})
 
 target_link_libraries(faster_rknn
 	${RKNN_RT_LIB}
