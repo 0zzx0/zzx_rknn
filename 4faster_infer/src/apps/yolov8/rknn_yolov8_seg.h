@@ -16,7 +16,7 @@
 #include "../../base/rknn_infer_base.hpp"
 #include "../../postprocess/rknn_postprocess.h"
 #include "../../preprocess/rknn_preprocess.h"
-#include "yolov8_seg_postprocess.h"
+#include "yolov8_postprocess.h"
 
 namespace FasterRKNN {
 

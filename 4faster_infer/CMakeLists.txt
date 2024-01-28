@@ -43,10 +43,10 @@ set(YOLOX 	src/apps/yolox/rknn_yolox.cpp
 			src/apps/yolox/yolox_postprocess.cpp
 			src/apps/yolox/yolox_postprocess.h
 )
-set(YOLOV8 	src/apps/yolov8-seg/rknn_yolov8_seg.cpp
-			src/apps/yolov8-seg/rknn_yolov8_seg.h
-			src/apps/yolov8-seg/yolov8_seg_postprocess.h
-			src/apps/yolov8-seg/yolov8_seg_postprocess.cpp
+set(YOLOV8 	src/apps/yolov8/rknn_yolov8_seg.cpp
+			src/apps/yolov8/rknn_yolov8_seg.h
+			src/apps/yolov8/yolov8_postprocess.h
+			src/apps/yolov8/yolov8_postprocess.cpp
 
 )
 add_executable(faster_rknn src/main.cpp ${BASEFILES} ${YOLOX} ${YOLOV8})

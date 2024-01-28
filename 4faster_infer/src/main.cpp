@@ -1,6 +1,6 @@
 #include "apps/yolox/rknn_yolox.h"
 #include "apps/yolox/rknn_yolox_thread.h"
-#include "apps/yolov8-seg/rknn_yolov8_seg.h"
+#include "apps/yolov8/rknn_yolov8_seg.h"
 
 using namespace std;
 using namespace FasterRKNN;

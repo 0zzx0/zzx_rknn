@@ -9,7 +9,7 @@
  * 
  */
 
-#include "yolov8_seg_postprocess.h"
+#include "yolov8_postprocess.h"
 
 namespace FasterRKNN {
 
