@@ -14,7 +14,10 @@
 
 #include "../../base/rknn_infer_thread_base.hpp"  // 注意这个地方，需要包含实现文件。因为是模板类，仅包含头文件会链接错误。
 #include "../../postprocess/rknn_postprocess.h"
-#include "../../preprocess/rknn_resize.hpp"
+#include "../../preprocess/rknn_preprocess.h"
+#include "yolox_postprocess.h"
+
+namespace FasterRKNN {
 
 using RknnInferThreadBaseYolo = RknnInferThreadBase<std::vector<ObjBox>, float>;
 /**
@@ -74,3 +77,5 @@ private:
 std::shared_ptr<RknnInferThreadBaseYolo> create_infer_yolox_thread(const std::string &model_path,
                                                                    const float nms_threshold,
                                                                    const float conf_threshold);
+
+};  // namespace FasterRKNN

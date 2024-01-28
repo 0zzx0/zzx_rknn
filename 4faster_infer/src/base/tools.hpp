@@ -12,6 +12,8 @@
 
 #include "rga.h"
 
+namespace FasterRKNN {
+
 /**
  * @brief 通过检查RKNN部分api返回值，判断是否正常运行
  *
@@ -102,3 +104,5 @@ static unsigned char* load_model(const char* filename, int* model_size) {
     *model_size = size;
     return data;
 }
+
+};  // namespace FasterRKNN

@@ -16,6 +16,8 @@
 
 #include "rknn_infer_base.hpp"
 
+namespace FasterRKNN {
+
 /**
  * @brief 生产者消费者推理基类
  *
@@ -143,3 +145,5 @@ protected:
     std::queue<Job> jobs_;  // 工作队列
     Job fetch_job_;         // 当前工作
 };
+
+};  // namespace FasterRKNN

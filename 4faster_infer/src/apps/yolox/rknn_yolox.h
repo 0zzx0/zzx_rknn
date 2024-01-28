@@ -14,7 +14,10 @@
 
 #include "../../base/rknn_infer_base.hpp"
 #include "../../postprocess/rknn_postprocess.h"
-#include "../../preprocess/rknn_resize.hpp"
+#include "../../preprocess/rknn_preprocess.h"
+#include "yolox_postprocess.h"
+
+namespace FasterRKNN {
 
 using RknnInferBaseObjBox = RknnInferBase<std::vector<ObjBox>>;
 /**
@@ -62,3 +65,5 @@ private:
 std::shared_ptr<RknnInferBaseObjBox> create_infer_yolox(const std::string &model_path,
                                                         const float nms_threshold,
                                                         const float conf_threshold);
+
+};  // namespace FasterRKNN

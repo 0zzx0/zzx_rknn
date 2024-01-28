@@ -19,6 +19,17 @@
 #include "rknn_api.h"
 #include "tools.hpp"
 
+namespace FasterRKNN {
+struct rknn_model_info {
+    rknn_input_output_num io_num;    // 输入输出数量
+    rknn_tensor_attr *input_attrs;   // 输入信息
+    rknn_tensor_attr *output_attrs;  // 输出信息
+    int input_c;                     // 输入通道
+    int input_w;                     // 输入宽度
+    int input_h;                     // 输入高度
+    bool is_quant = true;
+};
+
 /**
  * @brief 打印输入输出相关信息
  *
@@ -77,12 +88,10 @@ public:
     virtual OUTPUT infer(const cv::Mat &img) = 0;  // 纯虚函数
 
 protected:
-    std::string model_path_;        // 模型路径
-    rknn_context ctx_;              // 上下文
-    rknn_input_output_num io_num_;  // 输入输出数量
+    std::string model_path_;  // 模型路径
+    rknn_context ctx_;        // 上下文
 
-    std::vector<rknn_tensor_attr> input_attrs_;   // 输入信息
-    std::vector<rknn_tensor_attr> output_attrs_;  // 输出信息
+    rknn_model_info model_info_;
 
     std::vector<rknn_tensor_mem *> input_mems_;   // 输入张量
     std::vector<rknn_tensor_mem *> output_mems_;  // 输出张量
@@ -91,10 +100,6 @@ protected:
 
     std::vector<float> out_scales_;  // 反量化参数scales
     std::vector<int32_t> out_zps_;   // 反量化参数zps
-
-    int input_h_;        // 输入高度
-    int input_w_;        // 输入宽度
-    int input_channel_;  // 输入通道
 
 private:
     /**
@@ -113,9 +118,6 @@ private:
      *
      */
     virtual void init_io_tensor_mem();  // 一般也要重写，指定输入输出类型和大小
-
-
-
 };
 
 template <class OUTPUT>
@@ -124,13 +126,13 @@ RknnInferBase<OUTPUT>::~RknnInferBase() {
         free(model_data_);
     }
 
-    if(input_mems_.size() == io_num_.n_input) {
-        for(int i = 0; i < io_num_.n_input; i++) {
+    if(input_mems_.size() == model_info_.io_num.n_input) {
+        for(size_t i = 0; i < model_info_.io_num.n_input; i++) {
             CHECK_RKNN(rknn_destroy_mem(ctx_, input_mems_[i]));
         }
     }
-    if(output_mems_.size() == io_num_.n_output) {
-        for(int i = 0; i < io_num_.n_output; i++) {
+    if(output_mems_.size() == model_info_.io_num.n_output) {
+        for(size_t i = 0; i < model_info_.io_num.n_output; i++) {
             CHECK_RKNN(rknn_destroy_mem(ctx_, output_mems_[i]));
         }
     }
@@ -154,33 +156,39 @@ void RknnInferBase<OUTPUT>::Init(const std::string &model_path) {
     print_version_info();
 
     // 获取输入输出数量
-    CHECK_RKNN(rknn_query(ctx_, RKNN_QUERY_IN_OUT_NUM, &io_num_, sizeof(io_num_)));
-    printf("io number info: input num: %d, output num: %d\n", io_num_.n_input, io_num_.n_output);
+    CHECK_RKNN(
+        rknn_query(ctx_, RKNN_QUERY_IN_OUT_NUM, &model_info_.io_num, sizeof(model_info_.io_num)));
+    printf("io number info: input num: %d, output num: %d\n", model_info_.io_num.n_input,
+           model_info_.io_num.n_output);
 
     // 获取io attrs
-    input_attrs_.resize(io_num_.n_input);
-    output_attrs_.resize(io_num_.n_output);
+    model_info_.input_attrs =
+        (rknn_tensor_attr *)malloc(model_info_.io_num.n_input * sizeof(rknn_tensor_attr));
+    model_info_.output_attrs =
+        (rknn_tensor_attr *)malloc(model_info_.io_num.n_output * sizeof(rknn_tensor_attr));
+    // input_attrs_.resize(model_info_.io_num_.n_input);
+    // output_attrs_.resize(model_info_.io_num_.n_output);
 
-    for(int i = 0; i < io_num_.n_input; i++) {
-        input_attrs_[i].index = i;
-        CHECK_RKNN(
-            rknn_query(ctx_, RKNN_QUERY_INPUT_ATTR, &(input_attrs_[i]), sizeof(rknn_tensor_attr)));
-        printf("input info:\n");
-        dump_tensor_attr(&(input_attrs_[i]));
+    for(size_t i = 0; i < model_info_.io_num.n_input; i++) {
+        model_info_.input_attrs[i].index = i;
+        CHECK_RKNN(rknn_query(ctx_, RKNN_QUERY_INPUT_ATTR, &(model_info_.input_attrs[i]),
+                              sizeof(rknn_tensor_attr)));
+        printf("input[%ld]:\n", i);
+        dump_tensor_attr(&(model_info_.input_attrs[i]));
     }
 
-    for(int i = 0; i < io_num_.n_output; i++) {
-        output_attrs_[i].index = i;
-        CHECK_RKNN(rknn_query(ctx_, RKNN_QUERY_OUTPUT_ATTR, &(output_attrs_[i]),
+    for(size_t i = 0; i < model_info_.io_num.n_output; i++) {
+        model_info_.output_attrs[i].index = i;
+        CHECK_RKNN(rknn_query(ctx_, RKNN_QUERY_OUTPUT_ATTR, &(model_info_.output_attrs[i]),
                               sizeof(rknn_tensor_attr)));
-        printf("output info:\n");
-        dump_tensor_attr(&(output_attrs_[i]));
+        printf("output[%ld]:\n", i);
+        dump_tensor_attr(&(model_info_.output_attrs[i]));
     }
 
     // 获取反量化参数
-    for(int i = 0; i < io_num_.n_output; ++i) {
-        out_scales_.push_back(output_attrs_[i].scale);
-        out_zps_.push_back(output_attrs_[i].zp);
+    for(size_t i = 0; i < model_info_.io_num.n_output; ++i) {
+        out_scales_.push_back(model_info_.output_attrs[i].scale);
+        out_zps_.push_back(model_info_.output_attrs[i].zp);
     }
 
     // set_npu_core();
@@ -200,14 +208,14 @@ void RknnInferBase<OUTPUT>::print_version_info() {
 
 template <class OUTPUT>
 void RknnInferBase<OUTPUT>::set_input_hwc() {
-    if(input_attrs_[0].fmt == RKNN_TENSOR_NCHW) {
-        input_channel_ = input_attrs_[0].dims[1];
-        input_h_ = input_attrs_[0].dims[2];
-        input_w_ = input_attrs_[0].dims[3];
+    if(model_info_.input_attrs[0].fmt == RKNN_TENSOR_NCHW) {
+        model_info_.input_c = model_info_.input_attrs[0].dims[1];
+        model_info_.input_h = model_info_.input_attrs[0].dims[2];
+        model_info_.input_w = model_info_.input_attrs[0].dims[3];
     } else {
-        input_h_ = input_attrs_[0].dims[1];
-        input_w_ = input_attrs_[0].dims[2];
-        input_channel_ = input_attrs_[0].dims[3];
+        model_info_.input_h = model_info_.input_attrs[0].dims[1];
+        model_info_.input_w = model_info_.input_attrs[0].dims[2];
+        model_info_.input_c = model_info_.input_attrs[0].dims[3];
     }
 }
 
@@ -218,18 +226,21 @@ void RknnInferBase<OUTPUT>::set_npu_core(rknn_core_mask &core_mask) {
 
 template <class OUTPUT>
 void RknnInferBase<OUTPUT>::init_io_tensor_mem() {
-    input_mems_.resize(io_num_.n_input);
-    output_mems_.resize(io_num_.n_output);
+    input_mems_.resize(model_info_.io_num.n_input);
+    output_mems_.resize(model_info_.io_num.n_output);
 
-    for(int i = 0; i < io_num_.n_input; i++) {
-        input_attrs_[i].type = RKNN_TENSOR_UINT8;
-        input_mems_[i] = rknn_create_mem(ctx_, input_attrs_[i].size_with_stride);
-        rknn_set_io_mem(ctx_, input_mems_[i], &input_attrs_[i]);
+    for(size_t i = 0; i < model_info_.io_num.n_input; i++) {
+        model_info_.input_attrs[i].type = RKNN_TENSOR_UINT8;
+        input_mems_[i] = rknn_create_mem(ctx_, model_info_.input_attrs[i].size_with_stride);
+        rknn_set_io_mem(ctx_, input_mems_[i], &model_info_.input_attrs[i]);
     }
 
-    for(int i = 0; i < io_num_.n_output; i++) {
-        output_attrs_[i].type = RKNN_TENSOR_INT8;
-        output_mems_[i] = rknn_create_mem(ctx_, output_attrs_[i].n_elems * sizeof(int8_t));
-        rknn_set_io_mem(ctx_, output_mems_[i], &output_attrs_[i]);
+    for(size_t i = 0; i < model_info_.io_num.n_output; i++) {
+        model_info_.output_attrs[i].type = RKNN_TENSOR_INT8;
+        output_mems_[i] =
+            rknn_create_mem(ctx_, model_info_.output_attrs[i].n_elems * sizeof(int8_t));
+        rknn_set_io_mem(ctx_, output_mems_[i], &model_info_.output_attrs[i]);
     }
 }
+
+};  // namespace FasterRKNN
