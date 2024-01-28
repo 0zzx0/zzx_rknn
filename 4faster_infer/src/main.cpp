@@ -1,7 +1,9 @@
-#include "yolox/rknn_yolox.h"
-#include "yolox/rknn_yolox_thread.h"
+#include "apps/yolox/rknn_yolox.h"
+#include "apps/yolox/rknn_yolox_thread.h"
+#include "apps/yolov8-seg/rknn_yolov8_seg.h"
 
 using namespace std;
+using namespace FasterRKNN;
 
 // https://github.com/PaddlePaddle/FastDeploy/blob/develop/fastdeploy/runtime/backends/rknpu2/rknpu2_backend.cc
 
@@ -26,7 +28,7 @@ void testv1() {
                     cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 0));
     }
 
-    cv::Mat img1 = cv::imread("../img/6.jpg");
+    cv::Mat img1 = cv::imread("../img/1.jpg");
     // infer once
     auto res1 = model->infer(img1);
     for(auto a : res1) {
@@ -102,9 +104,49 @@ void test_thread() {
     printf("运行 %d 次，平均耗时 %f ms\n", test_count, infer_time / (float)test_count);
 }
 
+void test_v8() {
+    string model_name = "/home/orangepi/zzx/zzx_rknn/4faster_infer/src/seg.rknn";
+    const float nms_threshold = 0.3;
+    const float box_conf_threshold = 0.3;
+    // init model
+    auto model = create_infer_yolov8seg(model_name, nms_threshold, box_conf_threshold);
+
+    string image_name = "/home/orangepi/zzx/zzx_rknn/4faster_infer/img/10.jpg";
+    cv::Mat img = cv::imread(image_name);
+    auto res = model->infer(img);
+
+    for(auto a : res.objs) {
+        std::cout << "ans2: " << a.x1 << " " << a.y1 << " " << a.x2 << " " << a.y2 << " " << a.score
+                  << " " << a.category << std::endl;
+        cv::rectangle(img, cv::Point(a.x1, a.y1), cv::Point(a.x2, a.y2), cv::Scalar(255, 0, 0, 255),
+                      3);
+        cv::putText(img, std::to_string(a.category), cv::Point(a.x1, a.y1 + 12),
+                    cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 0));
+        
+    }
+    cv::imwrite("2.jpg", img);
+
+    for (int j = 0; j < 720; j++)
+        {
+            for (int k = 0; k < 1280; k++)
+            {
+                int pixel_offset = 3 * (j * 1280 + k);
+                if (res.segs[j * 1280 + k] != 0)
+                {
+                    img.data[pixel_offset + 0] = (unsigned char)255; // r
+                    img.data[pixel_offset + 1] = (unsigned char)255; // g
+                    img.data[pixel_offset + 2] = (unsigned char)255; // b
+                }
+            }
+        }
+        cv::imwrite("3.jpg", img);
+
+}
+
 int main() {
     testv1();
     // test_thread();
 
+    test_v8();
     return 0;
 }
