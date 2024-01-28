@@ -14,7 +14,9 @@
 #include <cmath>
 #include <algorithm>
 
-#include "rknn_api.h"
+#include "../base/rknn_infer_base.hpp"
+
+namespace FasterRKNN {
 
 /**
  * @brief 目标框结构
@@ -24,6 +26,9 @@ struct ObjBox {
     float GetWidth() { return (x2 - x1); };
     float GetHeight() { return (y2 - y1); };
     float area() { return GetWidth() * GetHeight(); };
+    ObjBox() {}
+    ObjBox(int x1_, int y1_, int x2_, int y2_, int category_, float score_)
+        : x1(x1_), y1(y1_), x2(x2_), y2(y2_), category(category_), score(score_) {}
 
     int x1;
     int y1;
@@ -32,6 +37,15 @@ struct ObjBox {
 
     int category;
     float score;
+};
+
+/**
+ * @brief 分割数据结构
+ *
+ */
+struct SegRes {
+    std::vector<ObjBox> objs;
+    std::vector<uint8_t> segs;
 };
 
 /**
@@ -65,7 +79,7 @@ inline static int32_t __clip(float val, float min, float max) {
  * @param scale 量化参数
  * @return int8_t 量化数据
  */
-static int8_t qnt_f32_to_affine(float f32, int32_t zp, float scale);
+int8_t qnt_f32_to_affine(float f32, int32_t zp, float scale);
 
 /**
  * @brief 反量化 int8 -> fp32
@@ -75,7 +89,7 @@ static int8_t qnt_f32_to_affine(float f32, int32_t zp, float scale);
  * @param scale 量化参数
  * @return float float值
  */
-static float deqnt_affine_to_f32(int8_t qnt, int32_t zp, float scale);
+float deqnt_affine_to_f32(int8_t qnt, int32_t zp, float scale);
 
 /**
  * @brief 计算IOU中的重合部分
@@ -103,58 +117,10 @@ static bool ScoreSort(ObjBox a, ObjBox b);
  * @param dst_boxes 结果数据
  * @param threshold NMS阈值
  */
-static void nms(std::vector<ObjBox> &src_boxes, std::vector<ObjBox> &dst_boxes, float threshold);
+void nms(std::vector<ObjBox> &src_boxes, std::vector<ObjBox> &dst_boxes, float threshold);
 
 // 特征图映射原图
-static void generate_grids_and_stride(std::vector<int> &strides,
-                                      std::vector<GridAndStride> &grid_strides, int input_w_);
+void generate_grids_and_stride(std::vector<int> &strides, std::vector<GridAndStride> &grid_strides,
+                               int input_w_);
 
-/**
- * @brief Yolox 后处理类
- *
- */
-class YoloxPostProcess {
-public:
-    /**
-     * @brief 构造函数。创建yolox后处理对象
-     *
-     * @param input_size 模型输入尺寸
-     * @param prob_threshold 分类阈值
-     * @param nms_threshold nms阈值
-     * @param output_attrs rknn输出张量信息
-     * @param zps 量化参数1
-     * @param scales 量化参数2
-     */
-    YoloxPostProcess(int input_size, float prob_threshold, float nms_threshold,
-                     std::vector<rknn_tensor_attr> &output_attrs, std::vector<int32_t> &zps,
-                     std::vector<float> &scales);
-    ~YoloxPostProcess() = default;
-
-    /**
-     * @brief 后处理
-     *
-     * @param src 输出数据指针
-     * @param results 结果保存
-     * @param img_scale 原始图片resize scale
-     */
-    void process(int8_t *src, std::vector<ObjBox> &results, float img_scale);
-
-private:
-    std::vector<int> strides_{8, 16, 32};      // stride
-    std::vector<GridAndStride> grid_strides_;  // grid_strides
-    std::vector<ObjBox> out_boxes;
-    // std::vector<ObjBox> nms_boxes;
-
-    int input_size_;   // 输入大小
-    int num_grid_;     // grid数量
-    int num_class_;    // 模型类别数
-    int num_anchors_;  // anchors数量1
-
-    int each_grid_long_;  // 步长
-
-    float prob_threshold_;  // socre 阈值
-    float nms_threshold_;   // nms 阈值
-
-    int32_t zp_;   // 量化参数
-    float scale_;  // 量化参数
-};
+};  // namespace FasterRKNN
