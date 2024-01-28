@@ -13,13 +13,13 @@ find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
 
 # rknn api
-set(RKNN_API_PATH /home/orangepi/source_code/RK3588/${CMAKE_SYSTEM_NAME}/librknn_api)
+set(RKNN_API_PATH /home/orangepi/rknn_1_6_0/runtime)
 set(RKNN_RT_LIB ${RKNN_API_PATH}/${LIB_ARCH}/librknnrt.so)
 include_directories(${RKNN_API_PATH}/include)
 
 #rga
-set(RGA_PATH /home/orangepi/source_code/RK3588_3rdparty/rga/RK3588)
-set(RGA_LIB ${RGA_PATH}/lib/Linux/${LIB_ARCH}/librga.so)
+set(RGA_PATH /home/orangepi/rknn_1_6_0/runtime/3rdparty/rga)
+set(RGA_LIB ${RGA_PATH}/libs/Linux/gcc-aarch64/librga.so)
 include_directories( ${RGA_PATH}/include)
 
 add_executable(rknn_yolo
